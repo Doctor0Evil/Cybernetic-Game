@@ -1,0 +1,362 @@
+object VitalNetPhoenixHybridstack {
+
+  CoreBlueprint {
+    # Global VitalNet contract planes (canonical, city-agnostic)
+    Planes : list<string> = [
+      "HerculesCompute",
+      "CyberOrganic",
+      "RealityOS",
+      "ALNCore",
+      "MasterPolicy",
+      "CIBridge",
+      "PolicyTest"
+    ];
+
+    # Cryptographic + identity baseline for all vnodes
+    CryptoProfile {
+      pqc_kem : string = "MLKEM-768";      # NIST PQC KEM, ML-KEM-768 (Kyber-768) [web:12]
+      pqc_sig : string = "MLDSA-65";       # NIST PQC signature (Dilithium/ML-DSA-65) [web:12]
+      sym_cipher_primary : string = "AES-256-GCM";  # AEAD [web:17]
+      sym_cipher_secondary : string = "XChaCha20-Poly1305";  # AEAD [web:17]
+      fido2_required : bool = true;        # WebAuthn/FIDO2 key material for operators [web:19]
+      did_method : string = "did:web:phoenix.vitalnet.city"; # W3C DID method [web:17]
+      ledger_backend : string = "HyperledgerFabric-VitalNet"; # Hyperledger-based [web:17]
+    }
+
+    # Global audit and consent primitives
+    AuditProfile {
+      jsonl_log_chain_topic : string = "VitalNet/LogChainFull";
+      safety_epoch_manifest_topic : string = "VitalNet/SafetyEpochManifest";
+      consent_trace_topic : string = "VitalNet/ALNConsentTrace";
+      gdpr_region_tags : list<string> = ["EU", "US", "Mixed"];
+      hipaa_required : bool = true;
+      eu_ai_act_risk_tags : list<string> = ["minimal", "limited", "high"];
+    }
+
+    # Global AU.ET / CSP model (monotone, globally capped)
+    EnergyPolicy {
+      auet_daily_cap_kwh : float = 2_000.0;      # city-wide AU.ET cap (non-minting)
+      csp_daily_cap_cu : float = 10_000.0;       # compute service points
+      monotone_mapping : string = "AUET=f(depth,voltage,session_time), non-decreasing";
+    }
+  }
+
+  RuntimeEnvelope {
+    # Canonical vnode registry (global view, city-agnostic types)
+    VnodeRole = enum {
+      GamingBCI,
+      XRSimHub,
+      ResearchNode,
+      InfraGateway,
+      UrbanGridCore,
+      CivicServices,
+      HealthDataNode,
+      YouthLab,
+      ComplianceCI
+    };
+
+    VnodeRecord {
+      id : string;
+      role : VnodeRole;
+      plane : string;
+      crypto_profile : CryptoProfile;
+      audit_profile : AuditProfile;
+      auet_cap_daily_kwh : float;
+      csp_cap_daily_cu : float;
+      safety_epoch_profile : string;   # pointer into XR / NanoNeuro envelope set
+      compliance_tags : list<string>; # ["GDPR","HIPAA","EU-AI-HighRisk", ...]
+      logging_backend : string;       # e.g., "HyperledgerVital/LogChainFull"
+      xr_enabled : bool;
+      bci_enabled : bool;
+    };
+
+    # Global registry keyed by vnode id
+    GlobalVnodes : map<string, VnodeRecord>;
+
+    # Phoenix-specialized slice (augcityinfracore.aln)
+    PhoenixVnodes : map<string, VnodeRecord>;
+  }
+
+  NSTLContract {
+    # AU.ET / CSP non-minting invariant across all vnodes
+    NonMintingEnergy :
+      axiom forall vnode_id [
+        daily_auet(vnode_id) ≤ EnergyPolicy.auet_daily_cap_kwh
+      ];
+
+    NonMintingCSP :
+      axiom forall vnode_id [
+        daily_csp(vnode_id) ≤ EnergyPolicy.csp_daily_cap_cu
+      ];
+
+    # Biosafety invariant: XR/NanoNeuro envelopes hard-reject unsafe configs
+    NanoNeuroSafety :
+      theorem ∀ vnode_id, session [
+        unsafe_rf_actuation(vnode_id, session) ⇒ session_rejected(vnode_id, session)
+      ];
+
+    # Role-based segregation: gaming vs non-gaming must not share unsafe caps
+    RoleSegregationXR :
+      axiom ∀ vnode_id [
+        (GlobalVnodes[vnode_id].role == VnodeRole.GamingBCI
+         ∨ GlobalVnodes[vnode_id].role == VnodeRole.XRSimHub)
+        ⇒ GlobalVnodes[vnode_id].auet_cap_daily_kwh ≤ 200.0
+      ];
+
+    RoleSegregationInfra :
+      axiom ∀ vnode_id [
+        (GlobalVnodes[vnode_id].role == VnodeRole.UrbanGridCore
+         ∨ GlobalVnodes[vnode_id].role == VnodeRole.CivicServices
+         ∨ GlobalVnodes[vnode_id].role == VnodeRole.HealthDataNode)
+        ⇒ GlobalVnodes[vnode_id].auet_cap_daily_kwh ≤ 50.0
+      ];
+  }
+
+  FunctionSurface {
+
+    # -------- Canonical vnode constructors --------
+
+    fn define_global_vnode(
+      id: string,
+      role: VnodeRole,
+      plane: string,
+      auet_cap_daily_kwh: float,
+      csp_cap_daily_cu: float,
+      safety_epoch_profile: string,
+      compliance_tags: list<string>,
+      xr_enabled: bool,
+      bci_enabled: bool
+    ) {
+      let record = VnodeRecord {
+        id = id,
+        role = role,
+        plane = plane,
+        crypto_profile = CryptoProfile,
+        audit_profile = AuditProfile,
+        auet_cap_daily_kwh = auet_cap_daily_kwh,
+        csp_cap_daily_cu = csp_cap_daily_cu,
+        safety_epoch_profile = safety_epoch_profile,
+        compliance_tags = compliance_tags,
+        logging_backend = CryptoProfile.ledger_backend,
+        xr_enabled = xr_enabled,
+        bci_enabled = bci_enabled
+      };
+      GlobalVnodes[id] = record;
+    }
+
+    fn define_phoenix_vnode_from_global(id: string) {
+      let base = GlobalVnodes[id];
+      PhoenixVnodes[id] = base;
+    }
+
+    # -------- Phoenix-specialized canonical roles --------
+
+    fn init_phoenix_manifest() {
+
+      # XR munitions / gaming arenas
+      define_global_vnode(
+        "vnodegamingsimhub",
+        VnodeRole.XRSimHub,
+        "RealityOS",
+        180.0,   # high AU.ET but bounded per day
+        1_200.0,
+        "SafetyEpoch/XRHighRiskShortSession",
+        ["GDPR","EU-AI-HighRisk","YouthGuard"],
+        xr_enabled = true,
+        bci_enabled = true
+      );
+
+      define_global_vnode(
+        "BCIEdge",
+        VnodeRole.GamingBCI,
+        "CyberOrganic",
+        160.0,
+        1_000.0,
+        "SafetyEpoch/BCIHighRiskShortSession",
+        ["HIPAA","GDPR","EU-AI-HighRisk"],
+        xr_enabled = true,
+        bci_enabled = true
+      );
+
+      define_global_vnode(
+        "XREdge",
+        VnodeRole.XRSimHub,
+        "RealityOS",
+        150.0,
+        900.0,
+        "SafetyEpoch/XRHighRiskShortSession",
+        ["GDPR","EU-AI-HighRisk"],
+        xr_enabled = true,
+        bci_enabled = false
+      );
+
+      # Non-gaming, civic / infra
+      define_global_vnode(
+        "vnodeurbangridcore",
+        VnodeRole.UrbanGridCore,
+        "HerculesCompute",
+        40.0,
+        800.0,
+        "SafetyEpoch/InfraLowRisk",
+        ["GDPR","EU-AI-Limited"],
+        xr_enabled = false,
+        bci_enabled = false
+      );
+
+      define_global_vnode(
+        "vnoderesearchpartition",
+        VnodeRole.ResearchNode,
+        "CyberOrganic",
+        60.0,
+        1_000.0,
+        "SafetyEpoch/ResearchMediumRisk",
+        ["GDPR","HIPAA","EU-AI-HighRisk"],
+        xr_enabled = true,
+        bci_enabled = true
+      );
+
+      define_global_vnode(
+        "vnodecivicservices",
+        VnodeRole.CivicServices,
+        "RealityOS",
+        25.0,
+        500.0,
+        "SafetyEpoch/CivicLowRisk",
+        ["GDPR","EU-AI-Limited"],
+        xr_enabled = true,
+        bci_enabled = false
+      );
+
+      define_global_vnode(
+        "vnodeyouthlab",
+        VnodeRole.YouthLab,
+        "RealityOS",
+        20.0,
+        400.0,
+        "SafetyEpoch/YouthStrict",
+        ["GDPR","YouthGuard","EU-AI-HighRisk"],
+        xr_enabled = true,
+        bci_enabled = false
+      );
+
+      # CI / governance CI plane
+      define_global_vnode(
+        "QuantumEdgeCI",
+        VnodeRole.ComplianceCI,
+        "CIBridge",
+        10.0,
+        300.0,
+        "SafetyEpoch/CIGovernance",
+        ["GDPR","AuditRoot"],
+        xr_enabled = false,
+        bci_enabled = false
+      );
+
+      # Bind Phoenix slice
+      define_phoenix_vnode_from_global("vnodegamingsimhub");
+      define_phoenix_vnode_from_global("BCIEdge");
+      define_phoenix_vnode_from_global("XREdge");
+      define_phoenix_vnode_from_global("vnodeurbangridcore");
+      define_phoenix_vnode_from_global("vnoderesearchpartition");
+      define_phoenix_vnode_from_global("vnodecivicservices");
+      define_phoenix_vnode_from_global("vnodeyouthlab");
+      define_phoenix_vnode_from_global("QuantumEdgeCI");
+    }
+
+    # -------- CI / BLUEPRINTHASH integration helpers --------
+
+    fn compute_blueprint_hash(
+      hybridstack_path: string,
+      augcityinfracore_path: string
+    ) -> string {
+      let json = build_blueprint_json(hybridstack_path, augcityinfracore_path);
+      let hash = sha256(json);
+      return hash;
+    }
+
+    fn build_blueprint_json(
+      hybridstack_path: string,
+      augcityinfracore_path: string
+    ) -> string {
+      let doc = {
+        "hybridstack_manifest_path" : hybridstack_path,
+        "augcityinfracore_manifest_path" : augcityinfracore_path,
+        "city" : "Phoenix",
+        "planes" : Planes,
+        "crypto_profile" : {
+          "pqc_kem" : CryptoProfile.pqc_kem,
+          "pqc_sig" : CryptoProfile.pqc_sig,
+          "sym_cipher_primary" : CryptoProfile.sym_cipher_primary,
+          "sym_cipher_secondary" : CryptoProfile.sym_cipher_secondary,
+          "fido2_required" : CryptoProfile.fido2_required,
+          "did_method" : CryptoProfile.did_method,
+          "ledger_backend" : CryptoProfile.ledger_backend
+        },
+        "audit_profile" : {
+          "jsonl_log_chain_topic" : AuditProfile.jsonl_log_chain_topic,
+          "safety_epoch_manifest_topic" : AuditProfile.safety_epoch_manifest_topic,
+          "consent_trace_topic" : AuditProfile.consent_trace_topic,
+          "gdpr_region_tags" : AuditProfile.gdpr_region_tags,
+          "hipaa_required" : AuditProfile.hipaa_required,
+          "eu_ai_act_risk_tags" : AuditProfile.eu_ai_act_risk_tags
+        }
+      };
+      return json_serialize(doc);
+    }
+
+    fn anchor_blueprint_hash_to_ledger(blueprint_hash: string) {
+      let entry = {
+        "type" : "VitalNetPhoenixBlueprint",
+        "city" : "Phoenix",
+        "hash" : blueprint_hash,
+        "timestamp_ns" : system_nanotime()
+      };
+      ledger_append(CryptoProfile.ledger_backend, entry);
+    }
+
+    # -------- Role-based AU.ET/CSP policy queries --------
+
+    fn get_vnode_policy(id: string) -> map<string, any> {
+      let v = PhoenixVnodes[id];
+      let out = map<string, any> {
+        "id" -> v.id,
+        "role" -> to_string(v.role),
+        "plane" -> v.plane,
+        "auet_cap_daily_kwh" -> v.auet_cap_daily_kwh,
+        "csp_cap_daily_cu" -> v.csp_cap_daily_cu,
+        "safety_epoch_profile" -> v.safety_epoch_profile,
+        "compliance_tags" -> v.compliance_tags,
+        "xr_enabled" -> v.xr_enabled,
+        "bci_enabled" -> v.bci_enabled
+      };
+      return out;
+    }
+  }
+
+  IntrospectionLens {
+
+    fn export_vitalnet_dom_sheet() -> string {
+      let dom = {
+        "VitalNetPhoenix" : {
+          "planes" : Planes,
+          "energy_policy" : {
+            "auet_daily_cap_kwh" : EnergyPolicy.auet_daily_cap_kwh,
+            "csp_daily_cap_cu" : EnergyPolicy.csp_daily_cap_cu,
+            "monotone_mapping" : EnergyPolicy.monotone_mapping
+          },
+          "crypto_profile" : {
+            "pqc_kem" : CryptoProfile.pqc_kem,
+            "pqc_sig" : CryptoProfile.pqc_sig,
+            "sym_cipher_primary" : CryptoProfile.sym_cipher_primary,
+            "sym_cipher_secondary" : CryptoProfile.sym_cipher_secondary,
+            "fido2_required" : CryptoProfile.fido2_required,
+            "did_method" : CryptoProfile.did_method,
+            "ledger_backend" : CryptoProfile.ledger_backend
+          },
+          "phoenix_vnodes" : PhoenixVnodes
+        }
+      };
+      return json_serialize(dom);
+    }
+  }
+}
