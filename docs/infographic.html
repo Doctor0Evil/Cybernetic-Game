@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VitalNet: Phoenix 2025-2030 Deployment Roadmap</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <!-- 
+        Color Palette: "High-Velocity Infra"
+        - Background: #020617 (Slate 950)
+        - Primary Cyan: #22d3ee (Cyan 400) - VitalNet Reality.os
+        - Warning Amber: #fbbf24 (Amber 400) - Munitions/Energy Caps
+        - Audit Purple: #a855f7 (Purple 500) - Blockchain/Hyperledger
+        - Safety Green: #10b981 (Emerald 500) - CyberOrganic Kernels
+    -->
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f1f5f9; }
+        .header-font { font-family: 'Orbitron', sans-serif; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            height: 320px;
+            max-height: 400px;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        .glass-panel:hover {
+            border-color: rgba(34, 211, 238, 0.3);
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.1);
+        }
+        .step-gradient {
+            background: linear-gradient(180deg, #22d3ee 0%, #a855f7 100%);
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-cyan-500/30">
+
+    <!-- Header -->
+    <header class="py-12 px-6 border-b border-slate-800 bg-slate-900/50">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="text-center md:text-left">
+                <div class="flex items-center gap-3 mb-2 justify-center md:justify-start">
+                    <span class="px-3 py-1 bg-cyan-500/10 border border-cyan-500/50 text-cyan-400 text-xs font-bold rounded-full uppercase tracking-widest">Reality.os Plane</span>
+                    <span class="px-3 py-1 bg-purple-500/10 border border-purple-500/50 text-purple-400 text-xs font-bold rounded-full uppercase tracking-widest">ALNCore Active</span>
+                </div>
+                <h1 class="text-3xl md:text-5xl font-black header-font tracking-tighter text-white">PHOENIX <span class="text-cyan-400">VITALNET</span></h1>
+                <p class="text-slate-400 mt-2 font-medium">Compressed 2025–2030 Deployment & XR Munitions Roadmap</p>
+            </div>
+            <div class="text-right hidden md:block border-l border-slate-700 pl-8">
+                <div class="text-xs text-slate-500 uppercase font-bold tracking-widest">System Hash</div>
+                <div class="text-cyan-500 font-mono text-sm">BLUEPRINTHASH: 8a0797e9...</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-6 space-y-12 py-12">
+
+        <!-- Intro Summary -->
+        <section class="max-w-4xl">
+            <p class="text-xl text-slate-300 leading-relaxed">
+                We are front-loading the Phoenix infrastructure. Rather than waiting for a 2050 endpoint, we are scaling 
+                <span class="text-cyan-400 font-semibold italic">staged, blockchain-governed extensions</span> of the 
+                Cybercore/Infra stack. By 2026, the city will move from lab pilots to youth-league XR scenarios, 
+                enforced by <span class="text-emerald-400">CyberOrganic safety kernels</span> and non-minting energy ledgers.
+            </p>
+        </section>
+
+        <!-- The 3-Plane Architecture Diagram (HTML/CSS) -->
+        <!-- Goal: Organize (Show groupings/architecture) -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="md:col-span-3 mb-4">
+                <h2 class="header-font text-xl text-white flex items-center gap-2">
+                    <span class="w-2 h-6 bg-cyan-400"></span> VitalNet Architecture Stack
+                </h2>
+            </div>
+            
+            <div class="glass-panel p-6 rounded-2xl border-t-2 border-emerald-500">
+                <h3 class="text-emerald-400 font-bold mb-2">CyberOrganic.os</h3>
+                <p class="text-xs text-slate-400 mb-4">FOUNDATIONAL SAFETY PLANE</p>
+                <ul class="text-sm text-slate-300 space-y-2">
+                    <li class="flex items-start gap-2">• <span>Impedance & Safety Envelopes</span></li>
+                    <li class="flex items-start gap-2">• <span>AU.ET Safety Envelopes</span></li>
+                    <li class="flex items-start gap-2">• <span>Temporal Logic Arbiters</span></li>
+                </ul>
+            </div>
+
+            <div class="glass-panel p-6 rounded-2xl border-t-2 border-cyan-500">
+                <h3 class="text-cyan-400 font-bold mb-2">Reality.os</h3>
+                <h3 class="text-xs text-slate-400 mb-4">DEPLOYMENT PLANE</h3>
+                <ul class="text-sm text-slate-300 space-y-2">
+                    <li class="flex items-start gap-2">• <span>Directional Audio Fields</span></li>
+                    <li class="flex items-start gap-2">• <span>Haptic QoS & TSN Routing</span></li>
+                    <li class="flex items-start gap-2">• <span>Smart Pole Edge Nodes</span></li>
+                </ul>
+            </div>
+
+            <div class="glass-panel p-6 rounded-2xl border-t-2 border-purple-500">
+                <h3 class="text-purple-400 font-bold mb-2">ALNCore / Policy</h3>
+                <h3 class="text-xs text-slate-400 mb-4">GOVERNANCE PLANE</h3>
+                <ul class="text-sm text-slate-300 space-y-2">
+                    <li class="flex items-start gap-2">• <span>MasterPolicy Bias Audit</span></li>
+                    <li class="flex items-start gap-2">• <span>LogChainFull / Hyperledger</span></li>
+                    <li class="flex items-start gap-2">• <span>PQC Kyber/Dilithium Logs</span></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Deployment Roadmap Timeline -->
+        <!-- Goal: Change (Timeline) -->
+        <section class="relative">
+            <div class="mb-8">
+                <h2 class="header-font text-xl text-white uppercase tracking-widest flex items-center gap-2">
+                    <span class="w-2 h-6 bg-amber-400"></span> Compressed Deployment Roadmap
+                </h2>
+            </div>
+
+            <div class="space-y-4">
+                <!-- 2025 -->
+                <div class="flex flex-col md:flex-row gap-6 p-6 glass-panel rounded-xl border-l-4 border-emerald-500">
+                    <div class="md:w-32 flex-shrink-0">
+                        <span class="header-font text-2xl font-bold text-emerald-400">2025</span>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-bold text-lg mb-2">Lab Pilots & Arena Foundation</h4>
+                        <p class="text-slate-400 text-sm mb-4 leading-relaxed">
+                            Establish XR Munition stacks in Reality.os. Integration of <strong>CyberOrganic safety kernels</strong> 
+                            to BCI hardware. Non-minting energy math (AU.ET) enforced via LogChainFull.
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">QPU.Datashard</span>
+                            <span class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">Argon2-TLS</span>
+                            <span class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">Ethics Lock</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2026 -->
+                <div class="flex flex-col md:flex-row gap-6 p-6 glass-panel rounded-xl border-l-4 border-cyan-500">
+                    <div class="md:w-32 flex-shrink-0">
+                        <span class="header-font text-2xl font-bold text-cyan-400">2026</span>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-bold text-lg mb-2">Youth-League & Equity Controls</h4>
+                        <p class="text-slate-400 text-sm mb-4 leading-relaxed">
+                            Expansion to 5-10 arenas. <strong>Federated Learning (FL)</strong> for munitions balancing. 
+                            Stricter sound exposure caps for minors with mandatory human health-advisor review.
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">Non-IID Data</span>
+                            <span class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">AI RMF</span>
+                            <span class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">Privacy FL</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2027-2028 -->
+                <div class="flex flex-col md:flex-row gap-6 p-6 glass-panel rounded-xl border-l-4 border-purple-500">
+                    <div class="md:w-32 flex-shrink-0">
+                        <span class="header-font text-2xl font-bold text-purple-400">27-28</span>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-bold text-lg mb-2">District-Scale Smart Mesh</h4>
+                        <p class="text-slate-400 text-sm mb-4 leading-relaxed">
+                            Integration with street furniture in University districts. All munitions routed via <strong>ALNCore</strong> 
+                            to prevent unauthorized triggers. Post-Quantum Cryptography (PQC) enabled for 10-year auditability.
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">Kyber/Dilithium</span>
+                            <span class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">SDN/TSN Routing</span>
+                            <span class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">DID Identity</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2029-2030 -->
+                <div class="flex flex-col md:flex-row gap-6 p-6 glass-panel rounded-xl border-l-4 border-amber-400">
+                    <div class="md:w-32 flex-shrink-0">
+                        <span class="header-font text-2xl font-bold text-amber-400">2030</span>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-bold text-lg mb-2">Unified Governance & Personhood</h4>
+                        <p class="text-slate-400 text-sm mb-4 leading-relaxed">
+                            City-available governed services. Realignment with <strong>Synthetic Person frameworks</strong> and 
+                            vicarious liability models. Disciplinary use treated as "High-Risk AI" under community oversight.
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">Vicarious Liability</span>
+                            <span class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">High-Risk Impact</span>
+                            <span class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">AssetPerson.aln</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Metrics Comparison -->
+        <!-- Goal: Compare (2050 Vision vs 2030 Deployment) -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="glass-panel p-6 rounded-2xl">
+                <h3 class="header-font text-lg text-white mb-6">Munitions Safety Envelope Efficacy</h3>
+                <div class="chart-container">
+                    <canvas id="efficiencyChart"></canvas>
+                </div>
+                <p class="text-xs text-slate-500 mt-4 italic">Enforcement of non-minting energy caps (AU.ET) vs traditional Virtual Sound protocols.</p>
+            </div>
+
+            <div class="glass-panel p-6 rounded-2xl">
+                <h3 class="header-font text-lg text-white mb-6">Node Deployment Density (District Scale)</h3>
+                <div class="chart-container">
+                    <canvas id="densityChart"></canvas>
+                </div>
+                <p class="text-xs text-slate-500 mt-4 italic">Projected Reality.os node integration per smart light pole across test districts.</p>
+            </div>
+        </section>
+
+        <!-- Sponsors / Repo Focus -->
+        <section class="border-t border-slate-800 pt-12 text-center">
+            <h2 class="header-font text-2xl text-white mb-6">Ecosystem & Repositories</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div class="p-4 bg-slate-900 border border-slate-800 rounded-lg">
+                    <div class="text-cyan-400 font-bold mb-1">Public GitHub</div>
+                    <div class="text-xs text-slate-500">Game Logic, HUD UX, Munition Schemas</div>
+                </div>
+                <div class="p-4 bg-slate-900 border border-slate-800 rounded-lg">
+                    <div class="text-emerald-400 font-bold mb-1">Private Consortium</div>
+                    <div class="text-xs text-slate-500">CyberOrganic Kernels, Medical Logic</div>
+                </div>
+                <div class="p-4 bg-slate-900 border border-slate-800 rounded-lg">
+                    <div class="text-purple-400 font-bold mb-1">Multicloud Region</div>
+                    <div class="text-xs text-slate-500">Hercules/ALNCore Hardened Clusters</div>
+                </div>
+            </div>
+            <div class="mt-12 text-slate-500 text-xs">
+                © 2025 Phoenix Infra/Cybercore Repository — Compliance with NIST AI RMF & EU AI Act Patterns.
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- CHART UTILITIES ---
+        function wrapLabel(label) {
+            if (label.length <= 16) return label;
+            const words = label.split(' ');
+            const lines = [];
+            let currentLine = words[0];
+            for (let i = 1; i < words.length; i++) {
+                if (currentLine.length + 1 + words[i].length <= 16) {
+                    currentLine += ' ' + words[i];
+                } else {
+                    lines.push(currentLine);
+                    currentLine = words[i];
+                }
+            }
+            lines.push(currentLine);
+            return lines;
+        }
+
+        const tooltipConfig = {
+            callbacks: {
+                title: function(tooltipItems) {
+                    const item = tooltipItems[0];
+                    let label = item.chart.data.labels[item.dataIndex];
+                    return Array.isArray(label) ? label.join(' ') : label;
+                }
+            },
+            backgroundColor: '#0f172a',
+            borderColor: '#334155',
+            borderWidth: 1
+        };
+
+        // --- CHARTS ---
+
+        // Efficiency Chart: Safety Kernel Effectiveness
+        new Chart(document.getElementById('efficiencyChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: ['2025 Lab', '2026 Arena', '2028 District', '2030 City'].map(wrapLabel),
+                datasets: [
+                    {
+                        label: 'Standard Munition Error',
+                        data: [15, 12, 18, 22],
+                        borderColor: '#f87171',
+                        backgroundColor: 'rgba(248, 113, 113, 0.1)',
+                        borderDash: [5, 5],
+                        fill: true,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'CyberOrganic Kernel',
+                        data: [5, 2, 1, 0.5],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        fill: true,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#94a3b8' } }, tooltip: tooltipConfig },
+                scales: {
+                    y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' } },
+                    x: { grid: { display: false }, ticks: { color: '#64748b' } }
+                }
+            }
+        });
+
+        // Density Chart: Node Scaling
+        new Chart(document.getElementById('densityChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Pilot Arenas', 'Youth Leagues', 'Univ District', 'Entertainment Dist'].map(wrapLabel),
+                datasets: [{
+                    label: 'Reality.os Nodes/SqKm',
+                    data: [120, 250, 480, 600],
+                    backgroundColor: '#22d3ee',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: tooltipConfig },
+                scales: {
+                    y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' } },
+                    x: { grid: { display: false }, ticks: { color: '#64748b' } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
