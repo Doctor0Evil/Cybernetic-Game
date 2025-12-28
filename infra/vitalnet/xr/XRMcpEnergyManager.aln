@@ -1,0 +1,301 @@
+object XRMcpEnergyManager {
+
+  CoreBlueprint {
+    # AU.ET internal units and caps (per-device, per-day)
+    AUET_CHAT_SESSION_CAP : float = 1_000_000.0;
+    AUET_XR_SESSION_CAP   : float = 100_000.0;
+
+    # Daily non-minting cap function: strictly increasing, capped below a system-wide max
+    DAILY_CAP_GLOBAL_MAX : float = 10_000_000.0;
+
+    fn daily_cap_from_A(A: float) -> float {
+      let non_negative_A =
+        if A < 0.0 { 0.0 } else { A };
+      let rootA = sqrt(non_negative_A);
+      let cap = 10.0 * rootA;
+      let capped =
+        if cap > DAILY_CAP_GLOBAL_MAX { DAILY_CAP_GLOBAL_MAX } else { cap };
+      if capped < 1.0 { return 1.0; };
+      return capped;
+    }
+
+    # Compression constants for AU.ET and CSP mapping
+    C_E : float = 1e-12;
+    C_S : float = 5e-13;
+
+    # NanoNeuro RF / thermal safety envelopes (device-calibrated)
+    J_MAX_A_M2 : float = 10.0;
+    SAR_MAX_W_KG : float = 2.0;
+    DELTA_T_MAX_C : float = 1.0;
+
+    # Build-time AU.ET/CSP budgets for code artifacts
+    MAX_CRATE_ENERGY_PER_BUILD_AUET : float = 50_000.0;
+    MAX_CRATE_CSP_PER_BUILD : float = 100_000.0;
+  }
+
+  RuntimeEnvelope {
+    # Per-device / per-day AU.ET and CSP state
+    auet_used_chat_today : float = 0.0;
+    auet_used_xr_today   : float = 0.0;
+    csp_used_today       : float = 0.0;
+
+    # Rolling energy window for safety proofs
+    auet_total_today : float = 0.0;
+    csp_total_today  : float = 0.0;
+
+    # Safety flags
+    xr_session_locked : bool = false;
+    device_lockout    : bool = false;
+
+    # Crate asset registry (local DB mirror)
+    CrateAsset {
+      id : string;
+      sha256 : string;
+      maintainer_did : string;
+      risk_score : float;
+      auet_cost : float;
+      csp_cost : float;
+      enabled : bool;
+    };
+
+    CrateAssets : map<string, CrateAsset>;
+  }
+
+  NSTLContract {
+    # Non-minting AU.ET: daily AU.ET must not exceed dynamic cap
+    NonMintingAUET :
+      axiom forall A_today [
+        auet_total_today ≤ daily_cap_from_A(A_today)
+      ];
+
+    # Non-minting CSP: bounded by build-time CSP budget
+    NonMintingCSP :
+      axiom forall C_today [
+        csp_total_today ≤ MAX_CRATE_CSP_PER_BUILD
+      ];
+
+    # XR safety: RF/thermal envelopes must hold independently of AU.ET
+    NanoNeuroHardSafety :
+      theorem ∀ event [
+        unsafe_rf_or_thermal(event) ⇒ reject_event(event)
+      ];
+  }
+
+  FunctionSurface {
+
+    # -------- AU.ET / CSP accounting for MCP requests --------
+
+    fn register_energy_event(
+      event_type: string,        # "chat", "tool", "xr_actuation"
+      tokens: int64,
+      risk_factor: float,
+      is_structural: bool
+    ) -> bool {
+
+      if device_lockout {
+        return false;
+      };
+
+      let tf = to_float(tokens);
+      let safe_tokens =
+        if tf < 0.0 { 0.0 } else { tf };
+
+      let rf =
+        if risk_factor < 0.0 { 0.0 } else { risk_factor };
+
+      let base_auet = C_E * safe_tokens * rf;
+      let base_csp  = C_S * safe_tokens;
+
+      if event_type == "chat" {
+        auet_used_chat_today += base_auet;
+      } else if event_type == "xr_actuation" {
+        auet_used_xr_today += base_auet;
+      };
+
+      if is_structural {
+        csp_used_today += base_csp;
+      };
+
+      auet_total_today = auet_used_chat_today + auet_used_xr_today;
+      csp_total_today = csp_used_today;
+
+      # Enforce per-session and daily caps.
+      if auet_used_chat_today > AUET_CHAT_SESSION_CAP {
+        device_lockout = true;
+        return false;
+      };
+
+      if auet_used_xr_today > AUET_XR_SESSION_CAP {
+        xr_session_locked = true;
+        return false;
+      };
+
+      let capA = daily_cap_from_A(auet_total_today);
+      if auet_total_today > capA {
+        device_lockout = true;
+        return false;
+      };
+
+      if csp_total_today > MAX_CRATE_CSP_PER_BUILD {
+        device_lockout = true;
+        return false;
+      };
+
+      return true;
+    }
+
+    # -------- XR-safe actuation envelope --------
+
+    fn xr_actuation_safe(
+      j_peak_a_m2: float,
+      sar_w_kg: float,
+      delta_t_c: float
+    ) -> bool {
+
+      let j_val = if j_peak_a_m2 < 0.0 { 0.0 } else { j_peak_a_m2 };
+      let sar_val = if sar_w_kg < 0.0 { 0.0 } else { sar_w_kg };
+      let dt_val = if delta_t_c < 0.0 { 0.0 } else { delta_t_c };
+
+      if j_val > J_MAX_A_M2 {
+        xr_session_locked = true;
+        return false;
+      };
+
+      if sar_val > SAR_MAX_W_KG {
+        xr_session_locked = true;
+        return false;
+      };
+
+      if dt_val > DELTA_T_MAX_C {
+        xr_session_locked = true;
+        return false;
+      };
+
+      return true;
+    }
+
+    fn xr_tool_call(
+      crate_id: string,
+      tokens: int64,
+      j_peak_a_m2: float,
+      sar_w_kg: float,
+      delta_t_c: float
+    ) -> bool {
+
+      if xr_session_locked || device_lockout {
+        return false;
+      };
+
+      if !xr_actuation_safe(j_peak_a_m2, sar_w_kg, delta_t_c) {
+        return false;
+      };
+
+      let ok = register_energy_event("xr_actuation", tokens, 1.5, true);
+      if !ok {
+        return false;
+      };
+
+      return crate_tool_allowed(crate_id);
+    }
+
+    # -------- Crate asset gating --------
+
+    fn crate_tool_allowed(crate_id: string) -> bool {
+      let asset = CrateAssets[crate_id];
+
+      if !asset.enabled {
+        return false;
+      };
+
+      if asset.auet_cost > MAX_CRATE_ENERGY_PER_BUILD_AUET {
+        return false;
+      };
+
+      if asset.csp_cost > MAX_CRATE_CSP_PER_BUILD {
+        return false;
+      };
+
+      if asset.risk_score > 1.0 {
+        let projected = auet_total_today + asset.auet_cost;
+        if projected > daily_cap_from_A(auet_total_today) {
+          return false;
+        };
+      };
+
+      return true;
+    }
+
+    fn update_crate_asset(
+      crate_id: string,
+      sha256: string,
+      maintainer_did: string,
+      risk_score: float,
+      auet_cost: float,
+      csp_cost: float
+    ) {
+      let rs = if risk_score < 0.0 { 0.0 } else { risk_score };
+      let ac = if auet_cost < 0.0 { 0.0 } else { auet_cost };
+      let cc = if csp_cost < 0.0 { 0.0 } else { csp_cost };
+
+      let asset = CrateAsset {
+        id = crate_id,
+        sha256 = sha256,
+        maintainer_did = maintainer_did,
+        risk_score = rs,
+        auet_cost = ac,
+        csp_cost = cc,
+        enabled = true
+      };
+      CrateAssets[crate_id] = asset;
+    }
+
+    # -------- MCP integration --------
+
+    fn handle_chat_request(
+      tokens: int64,
+      risk_factor: float
+    ) -> bool {
+      return register_energy_event("chat", tokens, risk_factor, false);
+    }
+
+    fn reset_daily_counters() {
+      auet_used_chat_today = 0.0;
+      auet_used_xr_today = 0.0;
+      csp_used_today = 0.0;
+      auet_total_today = 0.0;
+      csp_total_today = 0.0;
+      xr_session_locked = false;
+      device_lockout = false;
+    }
+  }
+
+  IntrospectionLens {
+
+    fn export_dom_sheet() -> string {
+      let dom = {
+        "xr_mcp_energy_manager" : {
+          "auet" : {
+            "chat_used" : auet_used_chat_today,
+            "xr_used" : auet_used_xr_today,
+            "total_today" : auet_total_today,
+            "chat_cap" : AUET_CHAT_SESSION_CAP,
+            "xr_cap" : AUET_XR_SESSION_CAP,
+            "daily_cap" : daily_cap_from_A(auet_total_today)
+          },
+          "csp" : {
+            "used_today" : csp_total_today,
+            "daily_cap" : MAX_CRATE_CSP_PER_BUILD
+          },
+          "safety" : {
+            "xr_session_locked" : xr_session_locked,
+            "device_lockout" : device_lockout,
+            "J_MAX_A_M2" : J_MAX_A_M2,
+            "SAR_MAX_W_KG" : SAR_MAX_W_KG,
+            "DELTA_T_MAX_C" : DELTA_T_MAX_C
+          }
+        }
+      };
+      return json_serialize(dom);
+    }
+  }
+}
